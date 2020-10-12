@@ -13,7 +13,7 @@ import (
 type Paginator struct {
 	sync.Mutex
 	Pages []*discordgo.MessageEmbed
-	Index int
+	Index Index
 
 	// Loop back to the beginning or end when on the first or last page.
 	Loop   bool
@@ -124,11 +124,11 @@ func (p *Paginator) Page() (*discordgo.MessageEmbed, error) {
 	p.Lock()
 	defer p.Unlock()
 
-	if p.Index < 0 || p.Index >= len(p.Pages) {
+	if p.Index.currentIndex < 0 || p.Index.currentIndex >= len(p.Pages) {
 		return nil, ErrIndexOutOfBounds
 	}
 
-	return p.Pages[p.Index], nil
+	return p.Pages[p.Index.currentIndex], nil
 }
 
 // NextPage sets the page index to the next page
@@ -136,14 +136,14 @@ func (p *Paginator) NextPage() error {
 	p.Lock()
 	defer p.Unlock()
 
-	if p.Index+1 >= 0 && p.Index+1 < len(p.Pages) {
-		p.Index++
+	if p.Index.currentIndex+1 >= 0 && p.Index.currentIndex+1 < len(p.Pages) {
+		p.Index.Incr()
 		return nil
 	}
 
 	// Set the queue back to the beginning if Loop is enabled.
 	if p.Loop {
-		p.Index = 0
+		p.Index.Set(0)
 		return nil
 	}
 
@@ -155,14 +155,14 @@ func (p *Paginator) PreviousPage() error {
 	p.Lock()
 	defer p.Unlock()
 
-	if p.Index-1 >= 0 && p.Index-1 < len(p.Pages) {
-		p.Index--
+	if p.Index.currentIndex-1 >= 0 && p.Index.currentIndex-1 < len(p.Pages) {
+		p.Index.Decr()
 		return nil
 	}
 
 	// Set the queue back to the beginning if Loop is enabled.
 	if p.Loop {
-		p.Index = len(p.Pages) - 1
+		p.Index.currentIndex = len(p.Pages) - 1
 		return nil
 	}
 
@@ -177,7 +177,7 @@ func (p *Paginator) Goto(index int) error {
 	if index < 0 || index >= len(p.Pages) {
 		return ErrIndexOutOfBounds
 	}
-	p.Index = index
+	p.Index.Set(index)
 	return nil
 }
 
@@ -213,5 +213,46 @@ func (p *Paginator) SetPageFooters() {
 		embed.Footer = &discordgo.MessageEmbedFooter{
 			Text: fmt.Sprintf("#[%d / %d]", index+1, len(p.Pages)),
 		}
+	}
+}
+
+// Sub is a subscriber interface
+type Sub interface {
+	OnNotify(index int)
+}
+
+// Index implements observer pattern for handling events on Paginator index change
+type Index struct {
+	subs         []Sub
+	currentIndex int
+}
+
+// AddSub adds subscribers to the list
+func (i *Index) AddSub(s ...Sub) {
+	i.subs = append(i.subs, s...)
+}
+
+// Set sets index at given number in and notifies all subscribers
+func (i *Index) Set(in int) {
+	i.currentIndex = in
+	i.notify()
+}
+
+// Incr increments index and notifies all subscribers
+func (i *Index) Incr() {
+	i.currentIndex++
+	i.notify()
+}
+
+// Decr decrements index and notifies all subscribers
+func (i *Index) Decr() {
+	i.currentIndex--
+	i.notify()
+}
+
+// notify notifies all subs
+func (i Index) notify() {
+	for _, s := range i.subs {
+		s.OnNotify(i.currentIndex)
 	}
 }
