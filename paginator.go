@@ -65,7 +65,7 @@ func (p *Paginator) addHandlers() {
 		}
 	})
 	p.Widget.Handle(NavNumbers, func(w *Widget, r *discordgo.MessageReaction) {
-		if msg, err := w.QueryInput("enter the page number you would like to open", r.UserID, 10*time.Second); err == nil {
+		if msg, err := w.QueryInput("Insert a page number to go to", r.UserID, 10*time.Second); err == nil {
 			if n, err := strconv.Atoi(msg.Content); err == nil {
 				p.Goto(n - 1)
 				p.Update()
@@ -211,7 +211,7 @@ func (p *Paginator) Running() bool {
 func (p *Paginator) SetPageFooters() {
 	for index, embed := range p.Pages {
 		embed.Footer = &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("#[%d / %d]", index+1, len(p.Pages)),
+			Text: fmt.Sprintf("Page #%d out of %d", index+1, len(p.Pages)),
 		}
 	}
 }
