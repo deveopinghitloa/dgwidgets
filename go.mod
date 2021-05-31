@@ -1,4 +1,4 @@
-module github.com/Ressetkk/dgwidgets
+module github.com/deveopinghitloa/dgwidgets
 
 go 1.15
 
