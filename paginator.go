@@ -20,6 +20,7 @@ type Paginator struct {
 	Widget *Widget
 
 	Ses *discordgo.Session
+	
 
 	DeleteMessageWhenDone   bool
 	DeleteReactionsWhenDone bool
@@ -27,6 +28,10 @@ type Paginator struct {
 
 	running bool
 }
+
+
+
+
 
 // NewPaginator returns a new Paginator
 //    ses      : discordgo session
@@ -87,7 +92,7 @@ func (p *Paginator) Spawn() error {
 		p.Lock()
 		p.running = false
 		p.Unlock()
-
+		p.Ses.ChannelMessageSend(p.Widget.Message.ChannelID, "Reaction has timed out")
 		// Delete Message when done
 		if p.DeleteMessageWhenDone && p.Widget.Message != nil {
 			p.Ses.ChannelMessageDelete(p.Widget.Message.ChannelID, p.Widget.Message.ID)
