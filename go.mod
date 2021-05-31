@@ -1,4 +1,4 @@
-module github.com/deveopinghitloa/dgwidgets
+module github.com/deveopinghitloa/widgets
 
 go 1.15
 
